@@ -42,7 +42,7 @@ class Classifier(nn.Module):
 
         self.classifier = nn.Sequential()
 
-	if self.cls_type == 'MultLayer':
+        if self.cls_type == 'MultLayer':
             nFeats = min(num_classes*20, 2048)
             self.classifier.add_module('Flatten',     Flatten())
             self.classifier.add_module('Liniear_1',   nn.Linear(nChannels, nFeats, bias=False))

@@ -22,6 +22,8 @@ from pdb import set_trace as breakpoint
 _CIFAR_DATASET_DIR = './datasets/CIFAR'
 _IMAGENET_DATASET_DIR = './datasets/IMAGENET/ILSVRC2012'
 _PLACES205_DATASET_DIR = './datasets/Places205'
+_CACD_DATASET_DIR = './datasets/CACD'
+_UTK_DATASET_DIR = './datasets/UTK'
 
 
 def buildLabelIndex(labels):
@@ -72,13 +74,52 @@ class Places205(data.Dataset):
     def __len__(self):
         return len(self.labels)
 
+
+class ImageLabel(data.Dataset):
+    def __init__(self, root, split, txt_file, transform=None, target_transform=None):
+        self.root = os.path.expanduser(root)
+        self.data_folder  = self.root
+        assert(split=='train' or split=='val')
+        self.transform = transform
+        self.target_transform = target_transform
+        with open(txt_file, 'r') as f:
+            self.img_files = []
+            self.labels = []
+            for row in f.readlines():
+                row = row.rstrip('\n').split(' ')
+                self.img_files.append(row[0])
+                self.labels.append(int(row[1]))
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
+        image_path = os.path.join(self.data_folder, self.img_files[index])
+        img = Image.open(image_path).convert('RGB')
+        target = self.labels[index]
+
+        if self.transform is not None:
+            img = self.transform(img)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        return img, target
+
+    def __len__(self):
+        return len(self.labels)
+
+
 class GenericDataset(data.Dataset):
-    def __init__(self, dataset_name, split, random_sized_crop=False,
+    def __init__(self, dataset_name, split, txt_file='', random_sized_crop=False,
                  num_imgs_per_cat=None):
         self.split = split.lower()
         self.dataset_name =  dataset_name.lower()
         self.name = self.dataset_name + '_' + self.split
         self.random_sized_crop = random_sized_crop
+        self.txt_file = txt_file
 
         # The num_imgs_per_cats input argument specifies the number
         # of training examples per category that would be used.
@@ -156,6 +197,62 @@ class GenericDataset(data.Dataset):
             self.data = datasets.__dict__[self.dataset_name.upper()](
                 _CIFAR_DATASET_DIR, train=self.split=='train',
                 download=True, transform=self.transform)
+        elif self.dataset_name=='cacd':
+            assert(self.split=='train' or self.split=='val')
+            self.mean_pix = [0.485, 0.456, 0.406]
+            self.std_pix = [0.229, 0.224, 0.225]
+
+            if self.split!='train':
+                transforms_list = [
+                    transforms.Scale(240),
+                    transforms.CenterCrop(224),
+                    lambda x: np.asarray(x),
+                ]
+            else:
+                if self.random_sized_crop:
+                    transforms_list = [
+                        transforms.RandomSizedCrop(224),
+                        transforms.RandomHorizontalFlip(),
+                        lambda x: np.asarray(x),
+                    ]
+                else:
+                    transforms_list = [
+                        transforms.Scale(240),
+                        transforms.RandomCrop(224),
+                        transforms.RandomHorizontalFlip(),
+                        lambda x: np.asarray(x),
+                    ]
+            self.transform = transforms.Compose(transforms_list)
+            self.data = ImageLabel(root=_CACD_DATASET_DIR, split=self.split,
+                txt_file='sourcefiles/CACD_5_%s.txt'%self.split, transform=self.transform)
+        elif self.dataset_name=='utk':
+            assert(self.split=='train' or self.split=='val')
+            self.mean_pix = [0.485, 0.456, 0.406]
+            self.std_pix = [0.229, 0.224, 0.225]
+
+            if self.split!='train':
+                transforms_list = [
+                    transforms.Scale(240),
+                    transforms.CenterCrop(224),
+                    lambda x: np.asarray(x),
+                ]
+            else:
+                if self.random_sized_crop:
+                    transforms_list = [
+                        transforms.RandomSizedCrop(224),
+                        transforms.RandomHorizontalFlip(),
+                        lambda x: np.asarray(x),
+                    ]
+                else:
+                    transforms_list = [
+                        transforms.Scale(240),
+                        transforms.RandomCrop(224),
+                        transforms.RandomHorizontalFlip(),
+                        lambda x: np.asarray(x),
+                    ]
+            self.transform = transforms.Compose(transforms_list)
+            self.data = ImageLabel(root=_UTK_DATASET_DIR, split=self.split,
+                txt_file='sourcefiles/UTK_5_%s.txt'%self.split, transform=self.transform)
         else:
             raise ValueError('Not recognized dataset {0}'.format(dname))
         
@@ -217,11 +314,11 @@ def rotate_img(img, rot):
     if rot == 0: # 0 degrees rotation
         return img
     elif rot == 90: # 90 degrees rotation
-        return np.flipud(np.transpose(img, (1,0,2)))
+        return np.flipud(np.transpose(img, (1,0,2))).copy()
     elif rot == 180: # 90 degrees rotation
-        return np.fliplr(np.flipud(img))
+        return np.fliplr(np.flipud(img)).copy()
     elif rot == 270: # 270 degrees rotation / or -90
-        return np.transpose(np.flipud(img), (1,0,2))
+        return np.transpose(np.flipud(img), (1,0,2)).copy()
     else:
         raise ValueError('rotation should be 0, 90, 180, or 270 degrees')
 
@@ -305,7 +402,7 @@ class DataLoader(object):
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
 
-    dataset = GenericDataset('imagenet','train', random_sized_crop=True)
+    dataset = GenericDataset('imagenet','train', random_sized_crop=True, txt_file='')
     dataloader = DataLoader(dataset, batch_size=8, unsupervised=True)
 
     for b in dataloader(0):
