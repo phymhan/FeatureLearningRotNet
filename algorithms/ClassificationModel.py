@@ -77,7 +77,7 @@ class ClassificationModel(Algorithm):
         loss_total = self.criterions['loss'](pred_var, labels_var)
         record['prec1'] = accuracy(pred_var.data, labels, topk=(1,))[0].item()
         # print(loss_total.item())
-        record['loss'] = loss_total.data[0]
+        record['loss'] = loss_total.item()
         #********************************************************
 
         #****** BACKPROPAGATE AND APPLY OPTIMIZATION STEP *******
