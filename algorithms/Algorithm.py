@@ -12,6 +12,8 @@ import torch.optim
 import utils
 import datetime
 import logging
+import numpy as np
+from pathlib import Path
 
 from pdb import set_trace as breakpoint
 
@@ -82,7 +84,7 @@ class Algorithm():
         if (not os.path.isfile(net_def_file)):
             raise ValueError('Non existing file: {0}'.format(net_def_file))
 
-        network = imp.load_source("",net_def_file).create_model(net_opt)
+        network = imp.load_source("", net_def_file).create_model(net_opt)
         if pretrained_path != None:
             self.load_pretrained(network, pretrained_path)
 
@@ -164,13 +166,13 @@ class Algorithm():
 
         for key, net in self.networks.items(): # Load networks
             if self.optim_params[key] == None: continue
-            self.load_network(key, epoch,suffix)
+            self.load_network(key, epoch, suffix)
 
-        if train: # initialize and load optimizers
+        if train:  # initialize and load optimizers
             self.init_all_optimizers()
             for key, net in self.networks.items():
                 if self.optim_params[key] == None: continue
-                self.load_optimizer(key, epoch,suffix)
+                self.load_optimizer(key, epoch, suffix)
 
         self.curr_epoch = epoch
 
@@ -196,7 +198,7 @@ class Algorithm():
         state = {'epoch': epoch,'optimizer': self.optimizers[net_key].state_dict()}
         torch.save(state, filename)
 
-    def load_network(self, net_key, epoch,suffix=''):
+    def load_network(self, net_key, epoch, suffix=''):
         assert(net_key in self.networks)
         filename = self._get_net_checkpoint_filename(net_key, epoch)+suffix
         assert(os.path.isfile(filename))
@@ -285,10 +287,32 @@ class Algorithm():
 
         return eval_stats.average()
 
+    def extract(self, dloader):
+        self.logger.info('Extracting: %s' % os.path.basename(self.exp_dir))
+
+        self.dloader = dloader
+        self.dataset_eval = dloader.dataset
+        self.logger.info('==> Dataset: %s [%d images]' % (dloader.dataset.name, len(dloader())))
+        for key, network in self.networks.items():
+            network.eval()
+
+        features = []
+        labels = []
+        nChannels = self.opt['networks']['model']['opt']['nChannels']
+        pretrained_path = self.opt['networks']['model']['pretrained']
+        feature_dir = Path(pretrained_path).parent
+        for idx, batch in enumerate(tqdm(dloader())):
+            feature_batch, label_batch = self.extract_step(batch)
+            for feature, label in zip(feature_batch, label_batch):
+                features.append(feature.cpu().detach().numpy().reshape([1, nChannels]))
+                labels.append(label.cpu().numpy().squeeze())
+        np.save(os.path.join(feature_dir, 'features.npy'), np.concatenate(features, axis=0))
+        np.save(os.path.join(feature_dir, 'labels.npy'), labels)
+
     def adjust_learning_rates(self, epoch):
         # filter out the networks that are not trainable and that do
         # not have a learning rate Look Up Table (LUT_lr) in their optim_params
-        optim_params_filtered = {k:v for k,v in self.optim_params.items()
+        optim_params_filtered = {k: v for k, v in self.optim_params.items()
             if (v != None and ('LUT_lr' in v))}
 
         for key, oparams in optim_params_filtered.items():
@@ -345,6 +369,9 @@ class Algorithm():
                 metrics for that batch. The key names on the dictionary can be
                 arbitrary.
         """
+        pass
+
+    def extract_step(self, batch):
         pass
 
     def allocate_tensors(self):

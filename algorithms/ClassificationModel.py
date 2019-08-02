@@ -34,6 +34,7 @@ def accuracy(output, target, topk=(1,)):
 
 class ClassificationModel(Algorithm):
     def __init__(self, opt):
+        self.out_feat_keys = opt['out_feat_keys']
         Algorithm.__init__(self, opt)
 
     def allocate_tensors(self):
@@ -46,6 +47,17 @@ class ClassificationModel(Algorithm):
 
     def evaluation_step(self, batch):
         return self.process_batch(batch, do_train=False)
+
+    def extract_step(self, batch):
+        self.tensors['dataX'].resize_(batch[0].size()).copy_(batch[0])
+        self.tensors['labels'].resize_(batch[1].size()).copy_(batch[1])
+        dataX = self.tensors['dataX']
+        label = self.tensors['labels']
+        with torch.no_grad():
+            out_feat_keys = self.out_feat_keys
+            feat = self.networks['model'](dataX, out_feat_keys=out_feat_keys)
+        return feat, label
+
 
     def process_batch(self, batch, do_train=True):
         #*************** LOAD BATCH (AND MOVE IT TO GPU) ********
