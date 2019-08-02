@@ -270,7 +270,7 @@ class Algorithm():
 
         self.dloader = dloader
         self.dataset_eval = dloader.dataset
-        self.logger.info('==> Dataset: %s [%d images]' % (dloader.dataset.name, len(dloader)))
+        self.logger.info('==> Dataset: %s [%d images]' % (dloader.dataset.name, len(dloader())))
         for key, network in self.networks.items():
             network.eval()
 
