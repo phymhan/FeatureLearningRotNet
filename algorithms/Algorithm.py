@@ -299,8 +299,9 @@ class Algorithm():
         features = []
         labels = []
         nChannels = self.opt['networks']['model']['opt']['nChannels']
-        pretrained_path = self.opt['networks']['model']['pretrained']
-        feature_dir = Path(pretrained_path).parent
+        # pretrained_path = self.opt['networks']['model']['pretrained']
+        # feature_dir = Path(pretrained_path).parent
+        feature_dir = self.opt['networks']['model']['exp_dir']
         for idx, batch in enumerate(tqdm(dloader())):
             feature_batch, label_batch = self.extract_step(batch)
             for feature, label in zip(feature_batch, label_batch):
