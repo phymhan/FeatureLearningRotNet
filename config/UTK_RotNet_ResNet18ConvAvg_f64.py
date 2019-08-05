@@ -25,12 +25,12 @@ config['max_num_epochs'] = 50
 net_opt = {}
 net_opt['num_classes'] = 4
 net_opt['num_stages']  = 4
-net_opt['nChannels']   = 32
+net_opt['nChannels']   = 64
 
 config['out_feat_keys'] = ['layer5']
 
 networks = {}
-feat_pretrained_file = './experiments/UTK_RotNet_ResNet18ConvAvg/model_net_latest'
+feat_pretrained_file = './experiments/UTK_RotNet_ResNet18ConvAvg_f64/model_net_latest'
 net_optim_params = {'optim_type': 'sgd', 'lr': 0.1, 'momentum': 0.9, 'weight_decay': 5e-4, 'nesterov': True, 'LUT_lr': [(15, 0.01),(30, 0.001),(45, 0.0001),(50, 0.00001)]}
 networks['model'] = {'def_file': 'architectures/ResNet18ConvAvg.py', 'pretrained': feat_pretrained_file, 'opt': net_opt, 'optim_params': net_optim_params}
 config['networks'] = networks
