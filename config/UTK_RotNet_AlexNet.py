@@ -7,7 +7,7 @@ data_train_opt['batch_size'] = batch_size
 data_train_opt['unsupervised'] = True
 data_train_opt['epoch_size'] = None
 data_train_opt['random_sized_crop'] = True
-data_train_opt['dataset_name'] = 'cacd'
+data_train_opt['dataset_name'] = 'utk'
 data_train_opt['split'] = 'train'
 
 data_test_opt = {}
@@ -15,7 +15,7 @@ data_test_opt['batch_size'] = batch_size
 data_test_opt['unsupervised'] = True
 data_test_opt['epoch_size'] = None
 data_test_opt['random_sized_crop'] = False
-data_test_opt['dataset_name'] = 'cacd'
+data_test_opt['dataset_name'] = 'utk'
 data_test_opt['split'] = 'val'
 
 config['data_train_opt'] = data_train_opt
@@ -31,7 +31,7 @@ config['out_feat_keys'] = ['conv4']
 
 networks = {}
 exp_dir = './experiments/UTK_RotNet_AlexNet'
-net_optim_params = {'optim_type': 'sgd', 'lr': 0.1, 'momentum':0.9, 'weight_decay': 5e-4, 'nesterov': True, 'LUT_lr': [(15, 0.01), (30, 0.001), (45, 0.0001), (50, 0.00001)]}
+net_optim_params = {'optim_type': 'sgd', 'lr': 0.1, 'momentum': 0.9, 'weight_decay': 5e-4, 'nesterov': True, 'LUT_lr': [(15, 0.01), (30, 0.001), (45, 0.0001), (50, 0.00001)]}
 networks['model'] = {'def_file': 'architectures/AlexNet.py', 'pretrained': None, 'opt': net_opt,  'optim_params': net_optim_params, 'exp_dir': exp_dir}
 config['networks'] = networks
 
