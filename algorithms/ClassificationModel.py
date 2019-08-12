@@ -32,6 +32,7 @@ def accuracy(output, target, topk=(1,)):
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
+
 class ClassificationModel(Algorithm):
     def __init__(self, opt):
         self.out_feat_keys = opt['out_feat_keys']
@@ -57,7 +58,6 @@ class ClassificationModel(Algorithm):
             out_feat_keys = self.out_feat_keys
             feat = self.networks['model'](dataX, out_feat_keys=out_feat_keys)
         return feat, label
-
 
     def process_batch(self, batch, do_train=True):
         #*************** LOAD BATCH (AND MOVE IT TO GPU) ********
